@@ -1,4 +1,5 @@
 import com.itextpdf.text.Document
+import com.itextpdf.text.PageSize
 import com.itextpdf.text.pdf.PdfWriter
 import com.itextpdf.tool.xml.XMLWorkerHelper
 
@@ -19,6 +20,7 @@ fun main(args: Array<String>) {
     println("************** STARTING *********************")
 
     var inputPath = ""
+    var landscape = false
     if(args.size<1)
     {
         println("************** NO PARAM ********************* ${args.size}")
@@ -29,6 +31,10 @@ fun main(args: Array<String>) {
         println("************** PARAMS ********************* ${args.size}")
         inputPath = args[0].trim()
 
+        if (args.size>=2)
+        {
+            landscape = args[1].equals("L", true)
+        }
 
     }
 
@@ -53,7 +59,7 @@ fun main(args: Array<String>) {
 
         files?.forEach { it->
 
-            generatePDFFromHTML(it,inputPath)
+            generatePDFFromHTML(it,inputPath , landscape)
         }
     }
     else
@@ -61,7 +67,7 @@ fun main(args: Array<String>) {
         println("************** just a file *********************")
         inputPath = folder.parent
 
-        generatePDFFromHTML(folder,inputPath)
+        generatePDFFromHTML(folder,inputPath, landscape)
     }
 
     zipFolder(inputPath)
@@ -72,16 +78,16 @@ fun main(args: Array<String>) {
 
 
 
-    private fun generatePDFFromHTML(file: File, outPath:String) {
+    private fun generatePDFFromHTML(file: File, outPath:String, landscape:Boolean = false) {
         println("Processing ${file.name}")
         var fileNameWithoutExt=""
 
         var formattedHtmlString =""
 
-        if(file.isDirectory)
-        {
-            return
-        }
+            if(file.isDirectory)
+            {
+                return
+            }
         if(file.name.toUpperCase().endsWith(".HTML") || file.name.toUpperCase().endsWith(".HTM") )
         {
             fileNameWithoutExt = file.name.substringBeforeLast(".")
@@ -99,7 +105,10 @@ fun main(args: Array<String>) {
         {
             return;
         }
-        val document = Document()
+
+        println("priting landscape $landscape")
+        val pageFormat = if(landscape) { PageSize.LETTER.rotate() }   else  { PageSize.LETTER }
+        val document = Document(pageFormat)
 
         val pdfFileName ="$outPath/pdf/$fileNameWithoutExt.pdf"
 
@@ -109,6 +118,7 @@ fun main(args: Array<String>) {
             document,
             FileOutputStream(pdfFileName)
         )
+
         document.open()
         XMLWorkerHelper.getInstance().parseXHtml(
             writer, document,
